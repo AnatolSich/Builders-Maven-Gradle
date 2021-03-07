@@ -1,0 +1,53 @@
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'war'
+
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+    dependencies {
+        testCompile 'junit:junit:4.12'
+        compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.0.1'
+    }
+
+    dependencies {
+        compile project(':admin')
+        compile project(':web')
+    }
+
+jar {
+    baseName = 'admin-jar'
+    version =  '0.0.1'
+}
+war {
+    from 'web'
+    webInf { from 'webapp/WEB-INF' }
+    classpath fileTree('libs')
+    webXml = file('/web/src/main/resources/web_config.properties')
+}
+
+test {
+  useJUnit()
+  useJUnitPlatform()
+
+  minHeapSize = "128m"
+  maxHeapSize = "512m"
+
+
+  jvmArgs '-XX:MaxPermSize=256m'
+
+
+  beforeTest { descriptor ->
+     logger.lifecycle("Running test: " + descriptor)
+  }
+
+  failFast = true
+
+  onOutput { descriptor, event ->
+     logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message )
+  }
+}

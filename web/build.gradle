@@ -1,0 +1,17 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.0.1'
+}
+dependencies {
+    implementation project(':utils')
+    implementation project(':services')
+}

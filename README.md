@@ -100,3 +100,120 @@ $ mvn -Dtest=TestApp1#testHello* test
 # Run all test methods match pattern 'testHello*' and 'testMagic*' from a test class.
 $ mvn -Dtest=TestApp1#testHello*+testMagic* test
  ```
+
+
+# Build the project with Gradle
+
+**Review settings.gradle**
+```sh
+rootProject.name = 'builders'
+include 'admin'
+include 'services'
+include 'utils'
+include 'web'
+ ``` 
+
+Our build contains 4 subprojects that represents the application. It is configured in the build.gradle file:
+
+```sh
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'war'
+
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+    dependencies {
+        testCompile 'junit:junit:4.12'
+        compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.0.1'
+    }
+
+    dependencies {
+        compile project(':admin')
+        compile project(':web')
+    }
+
+jar {
+    baseName = 'admin-jar'
+    version =  '0.0.1'
+}
+war {
+    from 'web'
+    webInf { from 'webapp/WEB-INF' }
+    classpath fileTree('libs')
+    webXml = file('/web/src/main/resources/web_config.properties')
+}
+
+test {
+  useJUnit()
+  useJUnitPlatform()
+
+  minHeapSize = "128m"
+  maxHeapSize = "512m"
+
+
+  jvmArgs '-XX:MaxPermSize=256m'
+
+
+  beforeTest { descriptor ->
+     logger.lifecycle("Running test: " + descriptor)
+  }
+
+  failFast = true
+
+  onOutput { descriptor, event ->
+     logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message )
+  }
+}
+
+```
+
+**Build the project**
+ Run:
+ ```sh
+ gradle build
+ ``` 
+ Also you can run each module separately using 
+  ```sh
+ gradle :<module_name>:build
+ ``` 
+ 
+  # Running Tests
+ 
+ Fully-qualified name pattern
+Prior to 4.7 or if the pattern doesn’t start with an uppercase letter, Gradle treats the pattern as fully-qualified. So if you want to use the test class name irrespective of its package, you would use --tests *.SomeTestClass. Here are some more examples:
+ ```sh
+# specific class
+gradle test --tests org.gradle.SomeTestClass
+
+# specific class and method
+gradle test --tests org.gradle.SomeTestClass.someSpecificMethod
+
+# method name containing spaces
+gradle test --tests "org.gradle.SomeTestClass.some method containing spaces"
+
+# all classes at specific package (recursively)
+gradle test --tests 'all.in.specific.package*'
+
+# specific method at specific package (recursively)
+gradle test --tests 'all.in.specific.package*.someSpecificMethod'
+
+gradle test --tests '*IntegTest'
+
+gradle test --tests '*IntegTest*ui*'
+
+gradle test --tests '*ParameterizedTest.foo*'
+
+# the second iteration of a parameterized test
+gradle test --tests '*ParameterizedTest.*[2]'
+Note that the wildcard '*' has no special understanding of the '.' package separator. It’s purely text based. So --tests *.SomeTestClass will match any package, regardless of its 'depth'.
+
+ ```
+You can also combine filters defined at the command line with continuous build to re-execute a subset of tests immediately after every change to a production or test source file. The following executes all tests in the 'com.mypackage.foo' package or subpackages whenever a change triggers the tests to run:
+```sh
+gradle test --continuous --tests "com.mypackage.foo.*"
+ ```
